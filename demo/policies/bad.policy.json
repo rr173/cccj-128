@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "principals": [
+    {"principal_id": "team-plant", "groups": ["plant-team"]},
+    {"principal_id": "team-plant", "groups": []}
+  ],
+  "rules": [
+    {"rule_id": "dup-id", "subject_type": "group", "subject_id": "ghost-group",
+     "effect": "allow", "filter": "plant/#"},
+    {"rule_id": "dup-id", "subject_type": "principal", "subject_id": "team-plant",
+     "effect": "maybe", "filter": "Bad/Topic"},
+    {"rule_id": "bad-filter", "subject_type": "principal", "subject_id": "team-plant",
+     "effect": "allow", "filter": "plant//+/"}
+  ]
+}

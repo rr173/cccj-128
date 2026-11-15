@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "principals": [
+    {"principal_id": "team-plant",   "groups": ["plant-team"]},
+    {"principal_id": "team-payroll", "groups": []},
+    {"principal_id": "team-no-rules", "groups": []},
+    {"principal_id": "alice", "groups": ["alice"]}
+  ],
+  "rules": [
+    {"rule_id": "plant-exact", "subject_type": "principal", "subject_id": "team-plant",
+     "effect": "allow", "filter": "plant"},
+    {"rule_id": "plant-sub",   "subject_type": "principal", "subject_id": "team-plant",
+     "effect": "allow", "filter": "plant/+/#"},
+    {"rule_id": "plant-private-deny", "subject_type": "group", "subject_id": "plant-team",
+     "effect": "deny", "filter": "plant/private/#"},
+
+    {"rule_id": "payroll-all", "subject_type": "principal", "subject_id": "team-payroll",
+     "effect": "allow", "filter": "payroll/#"},
+
+    {"rule_id": "alice-group-rule",     "subject_type": "group",     "subject_id": "alice",
+     "effect": "allow", "filter": "g/#"},
+    {"rule_id": "alice-principal-rule", "subject_type": "principal", "subject_id": "alice",
+     "effect": "allow", "filter": "p/#"}
+  ]
+}

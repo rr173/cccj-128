@@ -129,3 +129,154 @@ python3 -I run_tests.py              # 隔离模式（推荐，防止路径劫�
 | `subscription_retained` | 订阅建立时固化的初始保留视图（含投递标记） |
 | `delivery_cursor` | 每订阅实时事件投递游标（重启续投） |
 | `quarantine` | 非法帧隔离区（原因码 + 原始帧 JSON） |
+
+---
+
+# 采集范围准入（受控入口，本次新增能力）
+
+> **权限边界声明：本次新增的范围准入能力只存在于受控入口
+> `ControlledIngress`（及其 CLI `csubscribe` / `cpoll`）。**
+> 旧的 `MqttIngress.ingest(SUBSCRIBE)` 与 `MqttIngress.poll` 保持原样、支持范围
+> 不缩小；不限制能直接调用旧 API 或打开数据库文件的宿主管理员，也不给旧订阅
+> 追溯撤权。本能力是一次性的订阅准入，不是权限管理服务器，不连接消息代理。
+
+## 采集命名空间（受控入口的词汇表，刻意窄于通用 MQTT）
+
+- 每层只由小写 ASCII 字母、数字、下划线、连字符组成（`[a-z0-9_-]+`）且非空；
+  层间用 `/` 分隔；完整具体主题按 UTF-8 编码 **≤ 65535 字节**。
+- 授权/请求过滤器每层可以是上述字面量或 `+`；最后一层还可以是 `#`。
+  `+` 恰好占一层，`#` 占零层或更多层，所以 `plant/#` **包含 `plant` 本身**。
+- 不接受空层（`a//b`、首尾 `/`）、系统主题/共享订阅前缀（`$...`、`$share/...`）
+  或其他通配写法（`a+`、`a#`）。只有非空具体主题参与权限判断，`#` 不代表空主题。
+
+## 策略文件（可读 JSON）
+
+```json
+{
+  "version": 1,
+  "principals": [
+    {"principal_id": "team-plant", "groups": ["plant-team"]}
+  ],
+  "rules": [
+    {"rule_id": "r1", "subject_type": "principal",
+     "subject_id": "team-plant", "effect": "allow", "filter": "plant/+/#"},
+    {"rule_id": "r2", "subject_type": "group",
+     "subject_id": "plant-team", "effect": "deny", "filter": "plant/private/#"}
+  ]
+}
+```
+
+- `subject_type` 必须显式写 `principal` 或 `group`，**不能靠名字是否相同猜测**
+  （身份名与组名可以同名，二者按类型区分）。
+- 一个已登记身份的有效规则 = 直接规则 + 全部所属组规则。
+- 裁定：任一有效 `deny` 命中即拒绝；无 deny 且至少一个 `allow` 命中才允许；
+  其余默认拒绝（已登记但无规则的身份是正常的默认拒绝）。规则顺序无优先级。
+- 未知身份、不存在的组引用、重复 `rule_id`/`principal_id`、类型不符、非法过滤器、
+  未知字段、坏 JSON 都是**输入错误**，带 `location` 指出位置，绝不静默忽略后继续裁定。
+- 策略规范化后计算 canonical JSON 的 SHA-256 摘要，随每个判断返回，便于同事用
+  同一份策略重现。
+
+## 两种可导入判断
+
+```python
+from offline_mqtt import load_policy_file, AdmissionEngine
+engine = AdmissionEngine(load_policy_file("policy.json"))
+
+# 1) 具体主题裁定
+d = engine.decide_topic("team-plant", "plant/private/x")
+# -> TopicDecision(allowed, allow_rule_ids, deny_rule_ids, reason, policy_summary)
+#    reason: None（允许）| "DENY_RULE_MATCHED" | "NO_ALLOW_RULE_MATCHED"
+
+# 2) 过滤器范围裁定（对过滤器表示的整个集合下结论，不枚举主题）
+s = engine.decide_scope("team-plant", "plant/#")
+# -> ScopeDecision(safe, witness, policy_summary, product_states_explored, ...)
+#    safe=false 时 witness 给出一个真实、属于请求范围、且 decide_topic 确实拒绝的
+#    具体主题，并标注它命中了哪些 deny 规则还是完全没有 allow 覆盖。
+```
+
+### 为什么不用枚举也能终止、反例为什么真实
+
+把每个过滤器编译成一个 DFA（状态=已匹配层数，`#` 是接受态上的自环，`+` 是任意
+层值转移，字面量是等值转移）。层值字符串虽无限，但转移只区分“等于某字面量”与
+“其他任何合法层值（OTHER）”，故字母表有限。判定在“请求 DFA × 规则 DFA”的
+**乘积 DFA** 上做最短路搜索：乘积状态/边数都有有限上界，`#` 的多层只是自环而不
+产生无限新状态，因此必然终止——不采样、不枚举字符组合、不依赖当前 retained/ledger
+里出现过哪些主题。OTHER 被还原成一个确定的、不属于任何策略字面量的合法层值；
+返回前再跑一次 `decide_topic` 硬复核，确保 witness 真实、属于请求且确实被拒。
+
+- **字节上限**：路径边权按真实字节计费，超过 65535 的路径直接剪枝；因此只能在
+  超限长度出现的差异不算越权，也不会用超限串充当 witness。
+- **资源上限**（`offline_mqtt/admission.py` 顶部可调）：规则数、过滤器深度、乘积
+  状态/边数都有明确上限。触及上限抛 `AdmissionResourceLimit`，只报“无法处理”，
+  绝不伪装成 `safe=true` 或普通越权。默认可正常处理 200 条规则、80 层路径。
+
+## 受控订阅与读取（权限真正落地，而非静态展示）
+
+```python
+from offline_mqtt import MqttIngress, ControlledIngress, AdmissionEngine, load_policy_file
+from offline_mqtt.generator import subscribe
+
+with MqttIngress("mqtt.db") as ing:
+    controlled = ControlledIngress(ing, AdmissionEngine(load_policy_file("policy.json")))
+    # principal_id 由调用方认证后显式传入；绝不从记录的 session_id/client_id 推断
+    result = controlled.controlled_subscribe(
+        "team-plant", subscribe("any-session", ["plant/temp/#"]))
+    if result.granted:
+        sub_id = result.subscription_id          # 真实订阅 id
+        controlled.controlled_poll(sub_id)       # 只交付采集命名空间内的消息
+```
+
+- 先验证整份输入（记录结构、过滤器合法性、重复过滤器=输入错误），再逐个过滤器做
+  范围判断；**任何一项越权或输入无效都不创建订阅**——`subscriptions`、
+  `subscription_retained`、`delivery_cursor` 不产生任何一行。
+- 全部获准后才复用现有接入能力，在同一个立即写事务里建真实订阅，保留既有 retained
+  初始交付与实时游标语义，返回实际 `subscription_id` 与逐过滤器准入依据。
+- 受控读取只交付采集命名空间内的消息；库里其他用途的主题（大写、`$` 前缀、空层等）
+  即便底层 `#` 匹配也不会混入，保留/实时交接语义不变。
+
+## CLI（终端操作，输出均为 JSON）
+
+```bash
+python -m offline_mqtt.cli check-topic  POLICY PRINCIPAL TOPIC
+python -m offline_mqtt.cli check-scope  POLICY PRINCIPAL FILTER
+python -m offline_mqtt.cli csubscribe   DB POLICY PRINCIPAL FILTER [FILTER ...]
+python -m offline_mqtt.cli cpoll        DB SUB_ID
+```
+
+**返回格式与退出码（区分三类结果）：**
+
+| 情形 | JSON 形态 | 退出码 |
+|---|---|---|
+| 正常结论（含 `safe=false` / `allowed=false` 这种“越权但输入有效”） | 结论对象，`safe`/`allowed` 字段表达 | `0` |
+| 输入/策略错误（未知身份、坏策略、非法过滤器、重复过滤器、坏帧） | `{"status":"error","error_kind":...,"errors":[{location,reason,detail}]}` | `2` |
+| 资源不足，无法裁定 | `{"status":"error","error_kind":"resource_limit",...}` | `3` |
+
+普通越权是**有效输入下的正常业务结论**（退出码 0，带可复核 witness）；输入错误与
+资源不足是**无法给出裁定**的失败（退出码 2/3），二者不可混淆。
+
+## 可复核演练与独立枚举器
+
+- `demo/run_demo.py`：手工可复核的业务例子（两分支联合覆盖→加 deny 反例→换团队、
+  深层/未见名称、空层、零层 `#`、同名身份/组、无规则身份、真实订阅与受控读取、
+  混合请求全或无、坏策略/未知身份、200 规则/80 层、字节上限、资源上限），
+  证据写入 `demo/evidence/demo_results.json`。
+- `demo/cross_process_check.py`：在全新 `python -I` 进程里用同一策略复核判断与
+  witness（摘要与结论逐字节一致），证据写入 `demo/evidence/cross_process.json`。
+- `tests/_enumerator.py`：在缩小字母表 `{a,b}`、深度 ≤3 上**全枚举**具体主题的
+  独立参照，用来核对正式乘积自动机的完整结果。它只是补充检查，不是正式判定算法。
+
+## 新增/测试文件
+
+```
+offline_mqtt/
+  namespace.py   采集命名空间严格校验（独立于旧 topic.py 的窄词汇表）
+  policy.py      策略解析、带位置输入错误、canonical 摘要
+  admission.py   具体主题裁定 + 过滤器范围裁定（乘积 DFA，非枚举）
+  controlled.py  受控订阅/读取入口（权限边界）
+tests/
+  test_namespace.py / test_policy.py / test_admission.py
+  test_controlled.py / test_cli_admission.py（子进程 -I）
+  _enumerator.py 独立小枚举器（补充检查）
+demo/            策略样例、可复核演练与跨进程复核脚本
+```
+

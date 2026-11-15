@@ -21,6 +21,23 @@ from .topic import (
     MAX_TOPIC_LENGTH,
 )
 from .store import MqttStore
+from .namespace import (
+    validate_namespace_topic,
+    validate_namespace_filter,
+    is_namespace_topic,
+    MAX_TOPIC_BYTES,
+)
+from .policy import Policy, Rule, Principal, PolicyError, load_policy_file, parse_policy
+from .admission import (
+    AdmissionEngine,
+    AdmissionError,
+    AdmissionInputError,
+    AdmissionResourceLimit,
+    TopicDecision,
+    ScopeDecision,
+    Witness,
+)
+from .controlled import ControlledIngress, ControlledSubscribeResult, FilterAdmission
 
 __all__ = [
     "MqttIngress",
@@ -36,4 +53,25 @@ __all__ = [
     "topic_matches",
     "TopicError",
     "MAX_TOPIC_LENGTH",
+    # 采集范围准入（受控入口）
+    "validate_namespace_topic",
+    "validate_namespace_filter",
+    "is_namespace_topic",
+    "MAX_TOPIC_BYTES",
+    "Policy",
+    "Rule",
+    "Principal",
+    "PolicyError",
+    "load_policy_file",
+    "parse_policy",
+    "AdmissionEngine",
+    "AdmissionError",
+    "AdmissionInputError",
+    "AdmissionResourceLimit",
+    "TopicDecision",
+    "ScopeDecision",
+    "Witness",
+    "ControlledIngress",
+    "ControlledSubscribeResult",
+    "FilterAdmission",
 ]

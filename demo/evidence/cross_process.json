@@ -1,0 +1,41 @@
+{
+  "runner": "/usr/bin/python3 -I",
+  "cases": [
+    {
+      "principal_id": "team-plant",
+      "request_filter": "plant/#",
+      "safe": false,
+      "witness_topic": "plant/private",
+      "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+      "cross_process_identical": true,
+      "remote_topic_recheck_denied": true
+    },
+    {
+      "principal_id": "team-payroll",
+      "request_filter": "plant/#",
+      "safe": false,
+      "witness_topic": "plant",
+      "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+      "cross_process_identical": true,
+      "remote_topic_recheck_denied": true
+    },
+    {
+      "principal_id": "team-plant",
+      "request_filter": "plant/temp/#",
+      "safe": true,
+      "witness_topic": null,
+      "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+      "cross_process_identical": true,
+      "remote_topic_recheck_denied": null
+    },
+    {
+      "principal_id": "team-no-rules",
+      "request_filter": "#",
+      "safe": false,
+      "witness_topic": "a",
+      "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+      "cross_process_identical": true,
+      "remote_topic_recheck_denied": true
+    }
+  ]
+}

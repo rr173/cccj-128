@@ -1,0 +1,432 @@
+{
+  "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+  "scenes": [
+    {
+      "scene": "1a-两个允许分支联合覆盖 plant/#",
+      "principal_id": "team-plant",
+      "request_filter": "plant/#",
+      "safe": true,
+      "witness": null,
+      "policy": {
+        "policy_digest_sha256": "435558dc4213fd6a08303c7f104016d1e4f68b05afa261397312f476038c204c",
+        "canonical_json_sha256": "435558dc4213fd6a08303c7f104016d1e4f68b05afa261397312f476038c204c",
+        "principal_count": 1,
+        "group_count": 1,
+        "rule_count": 2
+      },
+      "resource_usage": {
+        "product_states_explored": 32767,
+        "product_edges_explored": 32766
+      }
+    },
+    {
+      "scene": "1b-加入 deny plant/private/# 后不安全",
+      "principal_id": "team-plant",
+      "request_filter": "plant/#",
+      "safe": false,
+      "witness": {
+        "witness_topic": "plant/private",
+        "allow_rule_ids": [
+          "plant-sub"
+        ],
+        "deny_rule_ids": [
+          "plant-private-deny"
+        ],
+        "reason": "DENY_RULE_MATCHED"
+      },
+      "policy": {
+        "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "principal_count": 4,
+        "group_count": 2,
+        "rule_count": 6
+      },
+      "resource_usage": {
+        "product_states_explored": 7,
+        "product_edges_explored": 6
+      }
+    },
+    {
+      "scene": "1c-把反例交给具体判断复核",
+      "principal_id": "team-plant",
+      "topic": "plant/private",
+      "allowed": false,
+      "allow_rule_ids": [
+        "plant-sub"
+      ],
+      "deny_rule_ids": [
+        "plant-private-deny"
+      ],
+      "reason": "DENY_RULE_MATCHED",
+      "policy": {
+        "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "principal_count": 4,
+        "group_count": 2,
+        "rule_count": 6
+      }
+    },
+    {
+      "scene": "2-换团队 team-payroll 看同一请求",
+      "principal_id": "team-payroll",
+      "request_filter": "plant/#",
+      "safe": false,
+      "witness": {
+        "witness_topic": "plant",
+        "allow_rule_ids": [],
+        "deny_rule_ids": [],
+        "reason": "NO_ALLOW_RULE_MATCHED"
+      },
+      "policy": {
+        "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "principal_count": 4,
+        "group_count": 2,
+        "rule_count": 6
+      },
+      "resource_usage": {
+        "product_states_explored": 2,
+        "product_edges_explored": 1
+      }
+    },
+    {
+      "scene": "3a-仅在第4层才出现的拒绝子树",
+      "principal_id": "t",
+      "request_filter": "plant/#",
+      "safe": false,
+      "witness": {
+        "witness_topic": "plant/x/y/z",
+        "allow_rule_ids": [
+          "broad"
+        ],
+        "deny_rule_ids": [
+          "deep-deny"
+        ],
+        "reason": "DENY_RULE_MATCHED"
+      },
+      "policy": {
+        "policy_digest_sha256": "600375ca36f700c5ebcbbef0ff3580c17a7d7061cf53682d1993c88567a622e3",
+        "canonical_json_sha256": "600375ca36f700c5ebcbbef0ff3580c17a7d7061cf53682d1993c88567a622e3",
+        "principal_count": 1,
+        "group_count": 0,
+        "rule_count": 2
+      },
+      "resource_usage": {
+        "product_states_explored": 9,
+        "product_edges_explored": 10
+      }
+    },
+    {
+      "scene": "3b-未见层值（策略里只有 temp 一个单词）",
+      "principal_id": "t",
+      "request_filter": "plant/+",
+      "safe": false,
+      "witness": {
+        "witness_topic": "plant/a",
+        "allow_rule_ids": [],
+        "deny_rule_ids": [],
+        "reason": "NO_ALLOW_RULE_MATCHED"
+      },
+      "policy": {
+        "policy_digest_sha256": "4ee2f0edff697e4a8e01dde68a1781756ea6d86327b83efcc7ee86bfdfc1ca16",
+        "canonical_json_sha256": "4ee2f0edff697e4a8e01dde68a1781756ea6d86327b83efcc7ee86bfdfc1ca16",
+        "principal_count": 1,
+        "group_count": 0,
+        "rule_count": 1
+      },
+      "resource_usage": {
+        "product_states_explored": 4,
+        "product_edges_explored": 3
+      }
+    },
+    {
+      "scene": "4a-空层过滤器被拒绝",
+      "errors": [
+        {
+          "location": "request_filter",
+          "reason": "EMPTY_LEVEL",
+          "detail": "levels[1] 为空层（不允许连续/首尾 '/'）"
+        }
+      ]
+    },
+    {
+      "scene": "4b-系统/共享前缀被拒绝",
+      "errors": [
+        {
+          "location": "request_filter",
+          "reason": "SYS_OR_SHARED_PREFIX",
+          "detail": "levels[0]='$share' 以 '$' 开头：系统主题/共享订阅前缀不属于采集命名空间"
+        }
+      ]
+    },
+    {
+      "scene": "4c-大写层被拒绝",
+      "errors": [
+        {
+          "location": "topic",
+          "reason": "INVALID_LEVEL_CHAR",
+          "detail": "levels[0]='Plant' 含非法字符：采集命名空间每层只允许 [a-z0-9_-] 且非空"
+        }
+      ]
+    },
+    {
+      "scene": "4d-# 的零层匹配：plant/# 包含 plant 本身",
+      "principal_id": "team-plant",
+      "topic": "plant",
+      "allowed": true,
+      "allow_rule_ids": [
+        "plant-exact"
+      ],
+      "deny_rule_ids": [],
+      "reason": null,
+      "policy": {
+        "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "principal_count": 4,
+        "group_count": 2,
+        "rule_count": 6
+      }
+    },
+    {
+      "scene": "4e-身份名与组名同名 alice（组规则生效）",
+      "principal_id": "alice",
+      "topic": "g/anything",
+      "allowed": true,
+      "allow_rule_ids": [
+        "alice-group-rule"
+      ],
+      "deny_rule_ids": [],
+      "reason": null,
+      "policy": {
+        "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "principal_count": 4,
+        "group_count": 2,
+        "rule_count": 6
+      }
+    },
+    {
+      "scene": "4f-已登记但无规则身份 -> 默认拒绝",
+      "principal_id": "team-no-rules",
+      "request_filter": "#",
+      "safe": false,
+      "witness": {
+        "witness_topic": "a",
+        "allow_rule_ids": [],
+        "deny_rule_ids": [],
+        "reason": "NO_ALLOW_RULE_MATCHED"
+      },
+      "policy": {
+        "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "principal_count": 4,
+        "group_count": 2,
+        "rule_count": 6
+      },
+      "resource_usage": {
+        "product_states_explored": 2,
+        "product_edges_explored": 1
+      }
+    },
+    {
+      "scene": "5-独立枚举器（字母表{a,b}、深度<=3）全部一致",
+      "checked_requests": [
+        "#",
+        "a/#",
+        "a/+/b",
+        "a/b/#",
+        "a/b/b/#",
+        "+",
+        "a/a/a"
+      ]
+    },
+    {
+      "scene": "6a-受控订阅获准并创建真实订阅",
+      "granted": true,
+      "principal_id": "team-plant",
+      "subscription_id": 1,
+      "filter_admissions": [
+        {
+          "request_filter": "plant/temp/#",
+          "safe": true,
+          "principal_id": "team-plant",
+          "witness": null,
+          "policy": {
+            "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+            "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+            "principal_count": 4,
+            "group_count": 2,
+            "rule_count": 6
+          },
+          "resource_usage": {
+            "product_states_explored": 32765,
+            "product_edges_explored": 32764
+          }
+        }
+      ],
+      "input_errors": [],
+      "policy": {
+        "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "principal_count": 4,
+        "group_count": 2,
+        "rule_count": 6
+      }
+    },
+    {
+      "scene": "6b-首次受控读取：旧保留值初始视图",
+      "messages": [
+        {
+          "topic": "plant/temp/current",
+          "payload": "21.5",
+          "retain": true
+        }
+      ]
+    },
+    {
+      "scene": "6c-发布普通消息后受控读回（实时）",
+      "messages": [
+        {
+          "topic": "plant/temp/reading",
+          "payload": "22.0",
+          "retain": false
+        }
+      ]
+    },
+    {
+      "scene": "7-一个获准+一个越权的混合请求被整体拒绝",
+      "granted": false,
+      "principal_id": "team-plant",
+      "subscription_id": null,
+      "filter_admissions": [
+        {
+          "request_filter": "plant/temp/ok",
+          "safe": true,
+          "principal_id": "team-plant",
+          "witness": null,
+          "policy": {
+            "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+            "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+            "principal_count": 4,
+            "group_count": 2,
+            "rule_count": 6
+          },
+          "resource_usage": {
+            "product_states_explored": 4,
+            "product_edges_explored": 3
+          }
+        },
+        {
+          "request_filter": "plant/private/salary",
+          "safe": false,
+          "principal_id": "team-plant",
+          "witness": {
+            "witness_topic": "plant/private/salary",
+            "allow_rule_ids": [
+              "plant-sub"
+            ],
+            "deny_rule_ids": [
+              "plant-private-deny"
+            ],
+            "reason": "DENY_RULE_MATCHED"
+          },
+          "policy": {
+            "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+            "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+            "principal_count": 4,
+            "group_count": 2,
+            "rule_count": 6
+          },
+          "resource_usage": {
+            "product_states_explored": 4,
+            "product_edges_explored": 3
+          }
+        }
+      ],
+      "input_errors": [],
+      "policy": {
+        "policy_digest_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "canonical_json_sha256": "fbfb4569b00574d1eb556c669c7e428bb030e0563b30bc3a8a717ac1c1717e5b",
+        "principal_count": 4,
+        "group_count": 2,
+        "rule_count": 6
+      }
+    },
+    {
+      "scene": "7b-直接打开数据库文件核对行数",
+      "subscriptions": 1,
+      "subscription_retained": 1,
+      "delivery_cursor": 1
+    },
+    {
+      "scene": "8a-坏策略失败演练（带位置的输入错误）",
+      "errors": [
+        {
+          "location": "$.principals[1].principal_id",
+          "reason": "DUPLICATE_PRINCIPAL_ID",
+          "detail": "principal_id 'team-plant' 重复登记"
+        },
+        {
+          "location": "$.rules[0].subject_id",
+          "reason": "UNKNOWN_GROUP_REF",
+          "detail": "规则引用了不存在的组 'ghost-group'（组由 principals[].groups 隐式声明）"
+        },
+        {
+          "location": "$.rules[1].rule_id",
+          "reason": "DUPLICATE_RULE_ID",
+          "detail": "rule_id 'dup-id' 重复"
+        },
+        {
+          "location": "$.rules[1].effect",
+          "reason": "MISSING_OR_INVALID_FIELD",
+          "detail": "effect 必须是 ('allow', 'deny') 之一，实际 'maybe'"
+        },
+        {
+          "location": "$.rules[1].filter",
+          "reason": "INVALID_LEVEL_CHAR",
+          "detail": "levels[0]='Bad' 含非法字符：采集命名空间每层只允许 [a-z0-9_-] 且非空"
+        },
+        {
+          "location": "$.rules[2].filter",
+          "reason": "EMPTY_LEVEL",
+          "detail": "levels[1] 为空层（不允许连续/首尾 '/'）"
+        }
+      ]
+    },
+    {
+      "scene": "8b-未知身份失败演练",
+      "errors": [
+        {
+          "location": "principal_id",
+          "reason": "UNKNOWN_PRINCIPAL",
+          "detail": "身份 'nobody' 未在策略中登记"
+        }
+      ]
+    },
+    {
+      "scene": "8c-200条规则的非枚举判断",
+      "rule_count": 200,
+      "covered_request_safe": true,
+      "uncovered_request_safe": false,
+      "uncovered_witness": "not-covered",
+      "product_states": 2
+    },
+    {
+      "scene": "8d-80层路径的非枚举判断",
+      "depth": 80,
+      "safe": true,
+      "product_states": 81,
+      "product_edges": 80
+    },
+    {
+      "scene": "9-字节上限：贴近 65535 的反例仍合法且不超限",
+      "max_topic_bytes": 65535,
+      "witness_topic_bytes": 65532,
+      "safe": false
+    },
+    {
+      "scene": "8e-触及资源上限 -> 明确报无法处理（不伪装 safe）",
+      "detail": "请求过滤器深度 101 超过上限 100，无法处理"
+    }
+  ]
+}
