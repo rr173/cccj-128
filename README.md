@@ -56,7 +56,8 @@ offline_mqtt/
   generator.py   本地帧生成器（脚本式 + 可控随机，离线）
   cli.py         跨进程 seed/dump/poll 命令
   capture_reconcile.py  捕获链对账：清单/观测校验、重传折叠、报告与 explain
-  capture_match.py      对账的纯计算核心（delta 切点扫描 + 位并行 LCS）
+  capture_match.py      对账的纯计算核心（delta 切点扫描 + 位并行 LCS
+  flow/                  可恢复本地流式加工作业（asyncio + SQLite，见 flow/README.md）
 tests/           unittest 模块（含对账与独立参考器）
 run_tests.py     隔离模式（python -I）测试运行器
 ```
@@ -648,3 +649,23 @@ offline_mqtt/
   _protobuf_vendor.py  vendored 纯 Python protobuf 的 sys.path 引导
 vendor/protobuf/     官方 protobuf 纯 Python 运行库（无 protoc、不联网）
 ```
+
+## 可恢复的本地流式加工作业（offline_mqtt.flow）
+
+在只读 MQTT 账本上跑 DAG 流式加工（source / scale / sum / union / sink），
+边是带正整数容量的有界 FIFO 通道，满了背压；作业状态与检查点落在独立 SQLite。
+
+- **一致检查点**：Chandy–Lamport 屏障沿有界边对齐，节点在首个屏障封存算子
+  状态、把入边未处理贡献快照为在途；协调器在单个立即写事务里把源位置、sum
+  状态、边在途、sink 累计截面与指标原子提升。每条贡献在截面内要么效果已进入
+  封存状态，要么作为在途保存、恢复先重放，不重不漏。
+- **运行中检查点**：控制入口 `request_checkpoint` 不持执行锁，可由另一进程
+  调用；源在屏障后继续向有容量通道发数，不被统一停到检查点完成。
+- **恢复**：fcntl 排他锁保证同作业单执行者；重启只认最近完整检查点，清理
+  collecting 残留，从保存的源游标之后继续、先重放在途；绑定摘要（图/算子
+  参数/源名称路径/固定范围）不符在读取前拒绝。
+- **可见性**：sink 成品只在完整检查点可见，收集期暂存对外不可见；所有 sink
+  与 sum 状态按同一检查点编号查询。
+- 详见 `offline_mqtt/flow/README.md`；验收见 `tests/test_flow_*.py`
+  （图校验、端到端正确性、屏障交错、SIGKILL 恢复、绑定/锁/写入故障、
+  有界内存与水位、CLI）。
