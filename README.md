@@ -479,3 +479,172 @@ delta），并对每个方案做独立复核。
   时间值。
 - `tests/test_capture_reconcile.py`：25 个用例，含来源只读、目标拒绝覆盖、
   资源上限、报告在来源移除后的离线复核。
+
+---
+
+# 按描述符删除字段的离线外发（本次新增能力）
+
+> **边界声明：本能力只是一个离线外发入口。** 它以只读方式打开一份**已封存**
+> 的接入账本，把配置列出的主题按描述符删除指定身份字段后，写成一个
+> **此前不存在的新目录**。不涉及订阅准入，不涉及两端对账，不修改接入器
+> 已有行为，不连接消息代理，运行时不联网，也不依赖机器上预装 protoc
+> （描述符只用二进制 `FileDescriptorSet`，protobuf 运行库随仓库 vendor 在
+> `vendor/protobuf/`，环境已装 protobuf 时优先用环境版本）。
+
+## 外发范围
+
+- 只导出配置逐项列出的**精确主题**；未列入配置的主题一律不交付。
+- 选中记录按 `ledger.seq` 升序逐条流式处理，**保留每次原始发布**：
+  不按 `message_id`、`dup` 或相同正文折叠。
+- 每行给出一个可交给现有接入 API 的 PUBLISH 记录（`payload_base64`、
+  来源 `event_seq`、本次使用的 `message_type`，以及原样的
+  `topic/qos/retain/dup/message_id/session_id`——保留原始会话身份，
+  不新造认证）。
+- 整份来源、配置、描述符及全部选中正文都核验成功才算交付；任何一条
+  失败则整批不交付（见“失败含义”）。
+
+## 为什么按“线上每次出现”删除，而不是解码后删
+
+直接把 Protobuf 解成对象再序列化，会丢失重复出现、原始 varint 编码与
+字段顺序；而只删除解码后的最终值，又会让**早先被覆盖的身份值**留在线上
+字节里（singular 字段先旧后新的旧值、oneof 中后来被覆盖的成员、singular
+message 前一段出现里的字段，解码器都会合并掉，但字节还在）。因此本入口
+在 **wire 层逐字段**工作：命中字段的每一次实际出现都整段移除
+（tag + 长度前缀 + 内容），singular message 的每段出现分别应用路径，
+不做对象合并。
+
+## 字节保真合同
+
+- 未删除字段的原始 tag、数值编码（含非规范但合法的 varint）、先后顺序与
+  每次出现都逐字节保留；
+- 只有**内部发生删除**的长度定界 message 才重算自己的长度前缀（规范
+  varint）；没有变化的容器连原长度前缀也逐字节不变；
+- 删完后嵌套 message 即使为空，也保留父字段的存在（长度 0）；
+- 绝不用对象序列化替代这份字节合同；输出只由未删字节与重算的长度前缀
+  拼成。
+
+## 删除路径（remove_paths）
+
+路径是字段号数组，从根消息开始；中间每项必须是 message 字段，最后一项
+整个删去。对 repeated message，路径作用于每个出现。map 按描述符里的
+合成 entry 处理（key=1、value=2）：可删整个 map 字段；value 为 message
+时可写成 `[map, 2, ...]` 继续向下删，或 `[map, 2]` 把每个 entry 的 value
+字段整个删掉；**不允许单独删 map 的 key**，也不允许沿标量 map value
+向下。路径必须在描述符图上真实存在（即使本批没有相应消息），穿过标量
+或不存在的路径在配置阶段即拒绝。父路径与子路径同时列出按父路径覆盖；
+清单次序与重复路径不改变结果。
+
+## 严格核验（任一不满足即整批拒绝）
+
+- 原始正文按 wire 层逐字段核验：tag、varint、定长数值、长度与消息边界；
+  字段号 0、越界 tag、不完整 varint、错误 wire type、越界 length、坏
+  packed 数值、非法 UTF-8 string 都拒绝。string 与 bytes 严格区分，
+  bytes 不按 UTF-8 解读。repeated 可打包数值接受 packed 与 unpacked
+  两种合法表示。
+- **任何一层**出现描述符不认识的字段都拒绝本次外发——不静默放行未知
+  数据，也不默默丢掉后宣称只删了指定字段。
+- 错误只提供来源序号（`event_seq`）、字段号路径、字节位置与类别，
+  不回显正文或字段值。
+- 资源上限（单条字节数、嵌套深度、字段出现数，配置 `limits` 或 CLI
+  `--max-*` 可调）在分配或递归前检查；超限返回“未完成”，不导出半条
+  消息。
+
+## 支持子集（明确不支持的不是“普通 bytes”）
+
+仅 **proto3** 描述符：普通标量、嵌套 message、repeated、packed 数值、
+oneof、map、proto3 optional、递归消息。以下在描述符载入时明确报
+`descriptor_error`，绝不当作普通字节放行：proto2 或未声明 syntax、
+extension/extension_range、group、required 字段、缺失依赖、同名符号
+冲突、不可解析的类型引用、字段号 0/越界/落在保留段/同一消息内重复、
+畸形 map entry（不是恰好 key=1/value=2）。目录中类型引用必须完整可
+解析（纯 Python 连接池对符号冲突与悬空引用只惰性报错，本入口在载入时
+自行核验）。
+
+## 输出目录与失败含义
+
+输出是一个**此前不存在**的新目录：
+
+| 文件 | 内容 |
+|---|---|
+| `messages.jsonl` | 每行一条 PUBLISH 记录（`payload_base64` 为输出字节） |
+| `report.json` | 描述符/配置摘要、选中/改动记录数、各删除路径命中的线上出现数、每条记录输入/输出长度与删除的原始半开字节区间 |
+| `COMPLETE.json` | 完成标记：前两者的 sha256 与大小、记录数 |
+
+报告**不保存**被删字节、原正文副本或可逆映射（长度与路径本身不隐藏）。
+只有三个文件齐备且摘要吻合，`inspect` 与读取接口才认这份导出。
+
+```bash
+python -m offline_mqtt.cli export  LEDGER --descriptor FDS --config CONFIG --out DIR
+python -m offline_mqtt.cli inspect EXPORT_DIR
+```
+
+| 情形 | 退出码 |
+|---|---|
+| 成功 | 0 |
+| 描述符/配置/正文非法（含坏字段、未知字段） | 2 |
+| 资源超限（未完成） | 3 |
+| 输出目录已存在 | 4 |
+| 来源账本或写出 IO 失败 | 5 |
+| 导出目录不完整或核验不符（inspect） | 6 |
+
+任何失败都**不留**可被 `inspect` 认为完整的结果：中途失败会移除整个
+输出目录；即使残留残骸，缺少 `COMPLETE.json` 或摘要不符也会被拒绝。
+来源账本以 `file:...?mode=ro&immutable=1` 打开（要求已 checkpoint、
+无热 WAL，否则明确报错），源表、原正文、原有订阅与旁边文件保持原样。
+
+## inspect 与读取接口
+
+- `inspect` 只依赖导出目录本身：核对完成标记与两个交付文件的 sha256、
+  导出条数、每条输出正文与报告中长度/序号的对应关系、改动计数一致性。
+  源库与配置移开后仍能核实。
+- 读取接口 `offline_mqtt.pb_reader.iter_export(EXPORT_DIR)` 把
+  `payload_base64` 还原为 `bytes`，`to_ingest_record()` 产出可直接交给
+  `MqttIngress.ingest` 的记录，重新接入后保持
+  topic/qos/retain/dup/message_id 与原始 session_id。
+
+## 可调用 API
+
+```python
+from offline_mqtt import (
+    export_ledger, inspect_export, iter_export,
+    load_descriptor_set, validate_remove_path, rewrite_payload, Limits,
+    ExportError,
+)
+
+summary = export_ledger("ledger.db", "descriptor.bin", "config.json", "out/")
+check = inspect_export("out/")                 # 不完整则抛 ExportError
+for rec in iter_export("out/"):                # 流式，不把载荷装入列表
+    ingress.ingest(rec.to_ingest_record())
+```
+
+规模：单条受限消息与描述符驻内存；选中记录逐条流式处理，不把全部载荷
+装入列表。实跑 12.8 万条入账（12.5 万条选中）导出约 20 秒，导出进程
+峰值内存约 27 MB。
+
+## 演示与测试
+
+- `demo/run_pb_export_demo.py`：手写 wire hex 与独立预期输出（敏感
+  singular string 连续两次 + 非规范 varint、127/128 长度边界、同一
+  message 分两段出现、oneof 旧成员、repeated message、map 的 message
+  value、packed/unpacked 混用、空容器、递归描述符），逐字节核对未删
+  区间并用官方动态消息复核输出语义；12.8 万条真实导出（展示峰值内存
+  与输出首尾记录）；导出经读取接口接入空库核对发布次数与载荷；未知
+  字段、错误 wire type、截短正文、非法 string、map key 删除、坏描述符
+  依赖、最后一条损坏、目标已存在等真实拒绝证据；来源与既有文件未动。
+  证据写入 `demo/pb_export_evidence/`。
+- `tests/test_pb_wire.py` / `test_pb_descriptor.py` / `test_pb_export.py`
+  / `test_pb_cli.py`：手写 hex 用例、描述符子集与路径校验、端到端
+  导出/inspect/重新接入、CLI 退出码。
+
+```
+offline_mqtt/
+  pb_errors.py       错误类别与退出码（不回显正文）
+  pb_descriptor.py   FileDescriptorSet 载入校验、删除路径校验与计划编译
+  pb_wire.py         wire 层逐字段核验与字节级删除（本能力的核心）
+  pb_export.py       只读来源 → 流式导出 → 原子完成标记
+  pb_inspect.py      导出目录离线核验
+  pb_reader.py       导出文件读取接口（还原 bytes，对接现有接入 API）
+  pb_export_cli.py   export / inspect 命令实现
+  _protobuf_vendor.py  vendored 纯 Python protobuf 的 sys.path 引导
+vendor/protobuf/     官方 protobuf 纯 Python 运行库（无 protoc、不联网）
+```

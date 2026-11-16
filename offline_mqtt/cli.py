@@ -19,8 +19,15 @@
     python -m offline_mqtt.cli summary   REPORT
     python -m offline_mqtt.cli explain   REPORT --side left|right (--seq N | --position N)
 
+按描述符删除字段的离线外发（只读来源账本，写出新目录）::
+
+    python -m offline_mqtt.cli export  LEDGER --descriptor FDS --config CONFIG --out DIR
+    python -m offline_mqtt.cli inspect EXPORT_DIR
+
 退出码约定：0=命令成功（check-* 中 safe=false / allowed=false 也是成功，结论在
 JSON 里）；2=输入/策略错误；3=资源不足无法裁定；4=对账报告目标已存在（拒绝覆盖）。
+外发命令：2=描述符/配置/正文非法；3=资源超限；4=输出目录已存在；5=来源/写出
+IO 失败；6=导出目录不完整或核验不符。
 """
 
 from __future__ import annotations
@@ -42,6 +49,7 @@ from .generator import (
 from .ingress import MqttIngress
 from .policy import PolicyError, load_policy_file
 from . import capture_cli
+from . import pb_export_cli
 
 # 退出码：输入/策略错误=2，资源不足=3。
 EXIT_INPUT_ERROR = 2
@@ -285,7 +293,32 @@ def main(argv: list[str] | None = None) -> int:
     p_exp.add_argument("--seq", type=int, default=None)
     p_exp.add_argument("--position", type=int, default=None)
 
+    p_pbexp = sub.add_parser("export", help="按描述符删除字段的离线外发（只读来源）")
+    p_pbexp.add_argument("ledger")
+    p_pbexp.add_argument("--descriptor", required=True, help="二进制 FileDescriptorSet")
+    p_pbexp.add_argument("--config", required=True, help="外发配置 JSON")
+    p_pbexp.add_argument("--out", required=True, help="输出目录（必须不存在）")
+    p_pbexp.add_argument("--max-bytes", type=int, default=None)
+    p_pbexp.add_argument("--max-depth", type=int, default=None)
+    p_pbexp.add_argument("--max-occurrences", type=int, default=None)
+
+    p_pbins = sub.add_parser("inspect", help="离线核实导出目录完整性")
+    p_pbins.add_argument("export_dir")
+
     args = parser.parse_args(argv)
+    if args.cmd == "export":
+        override = {}
+        for flag, key in ((args.max_bytes, "max_bytes"),
+                          (args.max_depth, "max_depth"),
+                          (args.max_occurrences, "max_occurrences")):
+            if flag is not None:
+                if flag <= 0:
+                    parser.error(f"--{key.replace('_', '-')} 必须是正整数")
+                override[key] = flag
+        return pb_export_cli.cmd_export(args.ledger, args.descriptor, args.config,
+                                        args.out, override or None)
+    if args.cmd == "inspect":
+        return pb_export_cli.cmd_inspect(args.export_dir)
     if args.cmd == "reconcile":
         if not args.dry_run and not args.out:
             parser.error("reconcile 需要 --out（或用 --dry-run）")

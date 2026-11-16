@@ -1,0 +1,706 @@
+{
+ "started_at": "2026-11-16T07:16:03Z",
+ "hand_cases": [
+  {
+   "case": "A_singular_twice_noncanonical_varint",
+   "root": "demo.M1",
+   "remove_paths": [
+    [
+     1
+    ]
+   ],
+   "input_hex": "0a0261610a026262108100",
+   "expected_hex": "108100",
+   "output_hex": "108100",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     0,
+     4
+    ],
+    [
+     4,
+     8
+    ]
+   ],
+   "hits": {
+    "1": 2
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "B_nested_length_boundary_127_128",
+   "root": "demo.Outer",
+   "remove_paths": [
+    [
+     1,
+     1
+    ]
+   ],
+   "input_hex": "0a82010a027878127c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012016b",
+   "expected_hex": "0a7e127c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012016b",
+   "output_hex": "0a7e127c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012016b",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     3,
+     7
+    ]
+   ],
+   "hits": {
+    "1.1": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "B2_unchanged_container_keeps_noncanonical_length",
+   "root": "demo.Outer",
+   "remove_paths": [
+    [
+     1,
+     1
+    ]
+   ],
+   "input_hex": "0a83001a0161",
+   "expected_hex": "0a83001a0161",
+   "output_hex": "0a83001a0161",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [],
+   "hits": {
+    "1.1": 0
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "B3_sibling_delete_keeps_noncanonical_length",
+   "root": "demo.Outer",
+   "remove_paths": [
+    [
+     2
+    ]
+   ],
+   "input_hex": "0a83001a016112016b",
+   "expected_hex": "0a83001a0161",
+   "output_hex": "0a83001a0161",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     6,
+     9
+    ]
+   ],
+   "hits": {
+    "2": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "C_same_message_field_two_segments",
+   "root": "demo.Outer",
+   "remove_paths": [
+    [
+     1,
+     1
+    ]
+   ],
+   "input_hex": "0a070a0273311a01610a070a0273321a0162",
+   "expected_hex": "0a031a01610a031a0162",
+   "output_hex": "0a031a01610a031a0162",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     2,
+     6
+    ],
+    [
+     11,
+     15
+    ]
+   ],
+   "hits": {
+    "1.1": 2
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "D_oneof_stale_member",
+   "root": "demo.Choice",
+   "remove_paths": [
+    [
+     1
+    ]
+   ],
+   "input_hex": "0a0274311005",
+   "expected_hex": "1005",
+   "output_hex": "1005",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     0,
+     4
+    ]
+   ],
+   "hits": {
+    "1": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "E_repeated_message_each_occurrence",
+   "root": "demo.RepList",
+   "remove_paths": [
+    [
+     1,
+     2
+    ]
+   ],
+   "input_hex": "0a060a01611201780a060a0162120179",
+   "expected_hex": "0a030a01610a030a0162",
+   "output_hex": "0a030a01610a030a0162",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     5,
+     8
+    ],
+    [
+     13,
+     16
+    ]
+   ],
+   "hits": {
+    "1.2": 2
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "F_map_message_value_descend",
+   "root": "demo.WithMap",
+   "remove_paths": [
+    [
+     1,
+     2,
+     2
+    ]
+   ],
+   "input_hex": "0a0c0a016b12070a027631120173",
+   "expected_hex": "0a090a016b12040a027631",
+   "output_hex": "0a090a016b12040a027631",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     11,
+     14
+    ]
+   ],
+   "hits": {
+    "1.2.2": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "F2_delete_whole_map",
+   "root": "demo.WithMap",
+   "remove_paths": [
+    [
+     1
+    ]
+   ],
+   "input_hex": "0a0c0a016b12070a027631120173",
+   "expected_hex": "",
+   "output_hex": "",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     0,
+     14
+    ]
+   ],
+   "hits": {
+    "1": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "F4_delete_map_value_field",
+   "root": "demo.WithMap",
+   "remove_paths": [
+    [
+     1,
+     2
+    ]
+   ],
+   "input_hex": "0a0c0a016b12070a027631120173",
+   "expected_hex": "0a030a016b",
+   "output_hex": "0a030a016b",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     5,
+     14
+    ]
+   ],
+   "hits": {
+    "1.2": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "G_packed_and_unpacked_preserved",
+   "root": "demo.Nums",
+   "remove_paths": [
+    [
+     3
+    ]
+   ],
+   "input_hex": "0a03010203080410091a027373",
+   "expected_hex": "0a0301020308041009",
+   "output_hex": "0a0301020308041009",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     9,
+     13
+    ]
+   ],
+   "hits": {
+    "3": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "H1_empty_container_preserved",
+   "root": "demo.Outer",
+   "remove_paths": [
+    [
+     1,
+     1
+    ]
+   ],
+   "input_hex": "0a0012016b",
+   "expected_hex": "0a0012016b",
+   "output_hex": "0a0012016b",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [],
+   "hits": {
+    "1.1": 0
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "H2_emptied_container_stays_present",
+   "root": "demo.Outer",
+   "remove_paths": [
+    [
+     1,
+     1
+    ]
+   ],
+   "input_hex": "0a030a0178",
+   "expected_hex": "0a00",
+   "output_hex": "0a00",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     2,
+     5
+    ]
+   ],
+   "hits": {
+    "1.1": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "I_recursive_descriptor_finite_path",
+   "root": "demo.Node",
+   "remove_paths": [
+    [
+     1
+    ],
+    [
+     2,
+     1
+    ]
+   ],
+   "input_hex": "0a0161120b0a016212060a01631a016e1a0178",
+   "expected_hex": "120812060a01631a016e1a0178",
+   "output_hex": "120812060a01631a016e1a0178",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     0,
+     3
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "hits": {
+    "1": 1,
+    "2.1": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "J_noncanonical_tag_preserved",
+   "root": "demo.M1",
+   "remove_paths": [
+    [
+     1
+    ]
+   ],
+   "input_hex": "0a0161900005",
+   "expected_hex": "900005",
+   "output_hex": "900005",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     0,
+     3
+    ]
+   ],
+   "hits": {
+    "1": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "K_fixed_width_fields_preserved",
+   "root": "demo.Fixed",
+   "remove_paths": [
+    [
+     3
+    ]
+   ],
+   "input_hex": "0d010203042521222324190a0b0c0d0e0f1011",
+   "expected_hex": "0d010203042521222324",
+   "output_hex": "0d010203042521222324",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     10,
+     19
+    ]
+   ],
+   "hits": {
+    "3": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  },
+  {
+   "case": "L_enum_varint_preserved",
+   "root": "demo.WithEnum",
+   "remove_paths": [
+    [
+     2
+    ]
+   ],
+   "input_hex": "0801120178",
+   "expected_hex": "0801",
+   "output_hex": "0801",
+   "byte_exact_vs_handwritten": true,
+   "deleted_segments_absent": true,
+   "intervals": [
+    [
+     2,
+     5
+    ]
+   ],
+   "hits": {
+    "2": 1
+   },
+   "dynamic_message_parse_ok": true,
+   "ok": true
+  }
+ ],
+ "scale": {
+  "ledger_records": 128000,
+  "selected_records_expected": 125000,
+  "seed_seconds": 94.72,
+  "source_sha256_before": "cfc1d7bc8a362bcb62d01187a6bf0530d5e9dccc2605eb91832f1fdc6815489b",
+  "export": {
+   "exit_code": 0,
+   "seconds": 13.13,
+   "peak_rss_mb_of_export_process": 26.8,
+   "selected_records": 125000,
+   "modified_records": 125000,
+   "path_hits": {
+    "factory/telemetry": {
+     "2": 120000,
+     "4.1": 120000,
+     "5.2": 240000,
+     "6.2.2": 120000,
+     "7": 60000,
+     "10.1": 120000
+    },
+    "factory/aux": {
+     "1": 5000
+    }
+   }
+  },
+  "messages_file_records": 125000,
+  "first_record": {
+   "type": "PUBLISH",
+   "session_id": "collector-1",
+   "topic": "factory/telemetry",
+   "payload_base64": "CgdNWC0yMDAwIggSBmxpbmUtQSoECgJ0MSoECgJ0MjIKCgJrMRIECgJ2MUAA...",
+   "qos": 1,
+   "retain": true,
+   "dup": true,
+   "message_id": 1,
+   "event_seq": 1,
+   "message_type": "acme.telemetry.DeviceReport",
+   "payload_base64_length": 96
+  },
+  "last_record": {
+   "type": "PUBLISH",
+   "session_id": "collector-1",
+   "topic": "factory/aux",
+   "payload_base64": "EPMD",
+   "qos": 0,
+   "retain": false,
+   "dup": false,
+   "message_id": null,
+   "event_seq": 125000,
+   "message_type": "acme.telemetry.HeartBeat",
+   "payload_base64_length": 4
+  },
+  "inspect": {
+   "ok": true,
+   "export_dir": "/workspace/demo/pb_export_evidence/export",
+   "selected_records": 125000,
+   "modified_records": 125000,
+   "checked_records": 125000,
+   "first_event_seq": 1,
+   "last_event_seq": 125000,
+   "topics": [
+    "factory/aux",
+    "factory/telemetry"
+   ],
+   "path_hits": {
+    "factory/telemetry": {
+     "2": 120000,
+     "4.1": 120000,
+     "5.2": 240000,
+     "6.2.2": 120000,
+     "7": 60000,
+     "10.1": 120000
+    },
+    "factory/aux": {
+     "1": 5000
+    }
+   },
+   "limits": {
+    "max_bytes": 1048576,
+    "max_depth": 64,
+    "max_occurrences": 65536
+   },
+   "descriptor_sha256": "41fcac7a63adea93878f26d871b0a6ccf40ad213109964bc1099b3dcb25ba0cc",
+   "config_sha256": "c44f4ec8adfdcb3f70a53f144fad98eacaf2b72d0705a07a12ec8bd3a39811dd"
+  },
+  "inspect_without_source": true
+ },
+ "reingest": {
+  "reingested_publishes": 125000,
+  "ledger_events_checked": 125000,
+  "field_mismatches": 0,
+  "ledger_has_extra_rows": false,
+  "per_topic_counts": {
+   "factory/telemetry": 120000,
+   "factory/aux": 5000
+  },
+  "seconds": 66.77,
+  "ok": true
+ },
+ "rejections": [
+  {
+   "case": "unknown_field",
+   "exit_code": 2,
+   "expected_exit_code": 2,
+   "inspect_exit_code_after_failure": 6,
+   "output_dir_left": false,
+   "error_json": {
+    "status": "error",
+    "error": {
+     "category": "unknown_field",
+     "detail": "消息 demo.M1 的描述符不认识字段号 9",
+     "event_seq": 1,
+     "field_path": [
+      9
+     ],
+     "byte_offset": 3
+    }
+   },
+   "ok": true
+  },
+  {
+   "case": "wrong_wire_type",
+   "exit_code": 2,
+   "expected_exit_code": 2,
+   "inspect_exit_code_after_failure": 6,
+   "output_dir_left": false,
+   "error_json": {
+    "status": "error",
+    "error": {
+     "category": "wrong_wire_type",
+     "detail": "字段号 1 的 wire type 0 与描述符不符",
+     "event_seq": 1,
+     "field_path": [
+      1
+     ],
+     "byte_offset": 0
+    }
+   },
+   "ok": true
+  },
+  {
+   "case": "truncated_payload",
+   "exit_code": 2,
+   "expected_exit_code": 2,
+   "inspect_exit_code_after_failure": 6,
+   "output_dir_left": false,
+   "error_json": {
+    "status": "error",
+    "error": {
+     "category": "truncated",
+     "detail": "varint 在消息边界内被截断",
+     "event_seq": 1,
+     "field_path": [
+      2
+     ],
+     "byte_offset": 2
+    }
+   },
+   "ok": true
+  },
+  {
+   "case": "invalid_utf8_string",
+   "exit_code": 2,
+   "expected_exit_code": 2,
+   "inspect_exit_code_after_failure": 6,
+   "output_dir_left": false,
+   "error_json": {
+    "status": "error",
+    "error": {
+     "category": "invalid_utf8",
+     "detail": "string 字段不是合法 UTF-8",
+     "event_seq": 1,
+     "field_path": [
+      1
+     ],
+     "byte_offset": 2
+    }
+   },
+   "ok": true
+  },
+  {
+   "case": "map_key_deletion",
+   "exit_code": 2,
+   "expected_exit_code": 2,
+   "inspect_exit_code_after_failure": 6,
+   "output_dir_left": false,
+   "error_json": {
+    "status": "error",
+    "error": {
+     "category": "config_error",
+     "detail": "删除路径 [1.1] 试图单独删除 map 的 key，不受支持"
+    }
+   },
+   "ok": true
+  },
+  {
+   "case": "bad_descriptor_dependency",
+   "exit_code": 2,
+   "expected_exit_code": 2,
+   "inspect_exit_code_after_failure": 6,
+   "output_dir_left": false,
+   "error_json": {
+    "status": "error",
+    "error": {
+     "category": "descriptor_error",
+     "detail": "文件 'x.proto' 依赖缺失: 'missing.proto'"
+    }
+   },
+   "ok": true
+  },
+  {
+   "case": "resource_limit",
+   "exit_code": 3,
+   "expected_exit_code": 3,
+   "output_dir_left": false,
+   "error_json": {
+    "status": "error",
+    "error": {
+     "category": "resource_limit",
+     "detail": "载荷 3 字节超过上限 2",
+     "event_seq": 1
+    }
+   },
+   "ok": true
+  }
+ ],
+ "corrupt_last": {
+  "exit_code": 2,
+  "error": {
+   "status": "error",
+   "error": {
+    "category": "wrong_wire_type",
+    "detail": "字段号 3 的 wire type 2 与描述符不符",
+    "event_seq": 128001,
+    "field_path": [
+     3
+    ],
+    "byte_offset": 0
+   }
+  },
+  "output_dir_left": false,
+  "inspect_exit_code": 6,
+  "source_untouched": true,
+  "ok": true
+ },
+ "target_exists": {
+  "exit_code": 4,
+  "ok": true
+ },
+ "source_integrity": {
+  "ledger_unchanged": true,
+  "sentinel_unchanged": true,
+  "no_wal_shm": true
+ },
+ "finished_at": "2026-11-16T07:19:45Z",
+ "ok": true
+}

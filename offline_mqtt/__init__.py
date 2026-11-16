@@ -56,6 +56,12 @@ from .capture_reconcile import (
     ReportError,
     CONTRACT as RECONCILE_CONTRACT,
 )
+from .pb_errors import ExportError
+from .pb_descriptor import load_descriptor_set, validate_remove_path
+from .pb_wire import Limits, rewrite_payload, build_schema
+from .pb_export import export_ledger
+from .pb_inspect import inspect_export, verify_complete
+from .pb_reader import ExportPublish, iter_export
 
 __all__ = [
     "MqttIngress",
@@ -109,4 +115,16 @@ __all__ = [
     "ReportExistsError",
     "ReportError",
     "RECONCILE_CONTRACT",
+    # 按描述符删除字段的离线外发
+    "ExportError",
+    "load_descriptor_set",
+    "validate_remove_path",
+    "Limits",
+    "rewrite_payload",
+    "build_schema",
+    "export_ledger",
+    "inspect_export",
+    "verify_complete",
+    "ExportPublish",
+    "iter_export",
 ]

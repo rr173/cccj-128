@@ -1,0 +1,43 @@
+{
+ "version": 1,
+ "topics": [
+  {
+   "topic": "factory/telemetry",
+   "message_type": "acme.telemetry.DeviceReport",
+   "remove_paths": [
+    [
+     2
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     6,
+     2,
+     2
+    ],
+    [
+     7
+    ],
+    [
+     10,
+     1
+    ]
+   ]
+  },
+  {
+   "topic": "factory/aux",
+   "message_type": "acme.telemetry.HeartBeat",
+   "remove_paths": [
+    [
+     1
+    ]
+   ]
+  }
+ ]
+}
