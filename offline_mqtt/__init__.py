@@ -38,6 +38,24 @@ from .admission import (
     Witness,
 )
 from .controlled import ControlledIngress, ControlledSubscribeResult, FilterAdmission
+from .capture_reconcile import (
+    reconcile,
+    load_manifest,
+    load_capture,
+    write_report,
+    load_report,
+    summarize_report,
+    explain_report,
+    verify_report,
+    verify_scenario,
+    find_counterpart,
+    ReconcileError,
+    ReconcileInputError,
+    ReconcileResourceLimit,
+    ReportExistsError,
+    ReportError,
+    CONTRACT as RECONCILE_CONTRACT,
+)
 
 __all__ = [
     "MqttIngress",
@@ -74,4 +92,21 @@ __all__ = [
     "ControlledIngress",
     "ControlledSubscribeResult",
     "FilterAdmission",
+    # 捕获链对账
+    "reconcile",
+    "load_manifest",
+    "load_capture",
+    "write_report",
+    "load_report",
+    "summarize_report",
+    "explain_report",
+    "verify_report",
+    "verify_scenario",
+    "find_counterpart",
+    "ReconcileError",
+    "ReconcileInputError",
+    "ReconcileResourceLimit",
+    "ReportExistsError",
+    "ReportError",
+    "RECONCILE_CONTRACT",
 ]

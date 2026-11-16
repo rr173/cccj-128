@@ -1,0 +1,620 @@
+{
+  "captures": {
+    "left": {
+      "capture_id": "chain-left",
+      "ledger_path": "left/ledger.db",
+      "ledger_sha256": "14b8edf52581403a9dbd6c6953b549cecd1f09470e03231c2be9d98d9342f1ad",
+      "observations_path": "left/observations.jsonl",
+      "observations_sha256": "fa3324b9970cb74f1ab815b0759b8d71cd8739e1342141045432deba310e6230",
+      "raw_rows": 4,
+      "retransmission_rows": 0,
+      "roots": 4
+    },
+    "right": {
+      "capture_id": "chain-right",
+      "ledger_path": "right/ledger.db",
+      "ledger_sha256": "977f5fd0f81b19571dc55a967354595af3a885f370e9733eebae3c93cfe1ed24",
+      "observations_path": "right/observations.jsonl",
+      "observations_sha256": "cf1e8a1afceebfffd68a596f19d399ee271cead92fbe30774a61014037325588",
+      "raw_rows": 4,
+      "retransmission_rows": 0,
+      "roots": 4
+    }
+  },
+  "contract": {
+    "comparison_object": "一条有序转发链（每次独立发布至多在另一端对应一次，发布先后不颠倒；允许丢失与单侧多出）",
+    "content_equality": [
+      "topic:原字符串",
+      "payload:原字节",
+      "retain:相等"
+    ],
+    "independent_duplicates": "retry_of=null 的每一行都是独立发布，即使 dup=true 或包号/主题/正文相同也不合并",
+    "not_used_for_matching": [
+      "qos",
+      "message_id",
+      "session_id"
+    ],
+    "pairing": "根发布之间、非交叉的一对一关系（左端次序递增 ⇒ 右端次序严格递增）",
+    "retransmission_rule": "retry_of 必须指向本端更早、retry_of=null 的根，capture_epoch/session_id/qos/message_id/topic/payload字节/retain 全同，qos∈{1,2}，重传行 dup=true；根与重传折叠为一次发布；拒绝链式 retry_of",
+    "scope_note": "仅适用于具有该顺序保证的捕获；不宣称任意 MQTT 部署都有此性质",
+    "time_model": "同一次比较只有一个共同整数 delta∈offset_ns 加在右端时钟上；每对满足 transit_ns[0] ≤ R+delta−L ≤ transit_ns[1]",
+    "unmatched_meaning": "no_counterpart_in_capture 仅说明指定捕获与合同内没有对应证据，不等于证明网络真实丢包"
+  },
+  "forced_pairs": [
+    {
+      "delta_interval": [
+        [
+          5,
+          6
+        ]
+      ],
+      "left_observed_ns": 1000000000000000000000000000000,
+      "left_root_position": 0,
+      "left_seq": 1,
+      "right_observed_ns": 999999999999999999999999999995,
+      "right_root_position": 0,
+      "right_seq": 1
+    },
+    {
+      "delta_interval": [
+        [
+          5,
+          6
+        ]
+      ],
+      "left_observed_ns": 1000000000000000000000000000001,
+      "left_root_position": 1,
+      "left_seq": 2,
+      "right_observed_ns": 999999999999999999999999999996,
+      "right_root_position": 1,
+      "right_seq": 2
+    },
+    {
+      "delta_interval": [
+        [
+          5,
+          6
+        ]
+      ],
+      "left_observed_ns": 1000000000000000000000000000002,
+      "left_root_position": 2,
+      "left_seq": 3,
+      "right_observed_ns": 999999999999999999999999999997,
+      "right_root_position": 2,
+      "right_seq": 3
+    },
+    {
+      "delta_interval": [
+        [
+          5,
+          6
+        ]
+      ],
+      "left_observed_ns": 1000000000000000000000000000003,
+      "left_root_position": 3,
+      "left_seq": 4,
+      "right_observed_ns": 999999999999999999999999999998,
+      "right_root_position": 3,
+      "right_seq": 4
+    }
+  ],
+  "format": "offline_mqtt.capture_chain_reconciliation/v1",
+  "format_version": 1,
+  "generated_by": "offline_mqtt.capture_reconcile.reconcile",
+  "input": {
+    "manifest_path": "/workspace/demo/reconcile_evidence/captures/04-mixed/manifest.json",
+    "manifest_sha256": "64e392c4e6574b4677b90045b75d9477bbea0896f417bee5920e54c9e48fd8af",
+    "offset_ns": [
+      -6,
+      6
+    ],
+    "transit_ns": [
+      0,
+      1
+    ]
+  },
+  "notes": [
+    "本报告只是指定捕获与合同内的对应证据；no_counterpart_in_capture 不等于证明网络真实丢包。",
+    "同一正文的独立重复发布不按摘要去重；重传只由 retry_of 引用折叠。",
+    "报告不含可写来源连接；来源库与观测仅以 sha256 记录。"
+  ],
+  "optimal_witness": {
+    "delta": 5,
+    "pair_count": 4,
+    "pairs": [
+      {
+        "left_observed_ns": 1000000000000000000000000000000,
+        "left_root_position": 0,
+        "left_seq": 1,
+        "payload": {
+          "base64": "AP+ACg0A",
+          "encoding": "hex",
+          "hex": "00ff800a0d00",
+          "length": 6,
+          "utf8": null
+        },
+        "retain": false,
+        "right_observed_ns": 999999999999999999999999999995,
+        "right_root_position": 0,
+        "right_seq": 1,
+        "topic": "d/bin",
+        "transit_ns": 0
+      },
+      {
+        "left_observed_ns": 1000000000000000000000000000001,
+        "left_root_position": 1,
+        "left_seq": 2,
+        "payload": {
+          "base64": "c2FtZQ==",
+          "encoding": "hex",
+          "hex": "73616d65",
+          "length": 4,
+          "utf8": "same"
+        },
+        "retain": false,
+        "right_observed_ns": 999999999999999999999999999996,
+        "right_root_position": 1,
+        "right_seq": 2,
+        "topic": "d/epoch",
+        "transit_ns": 0
+      },
+      {
+        "left_observed_ns": 1000000000000000000000000000002,
+        "left_root_position": 2,
+        "left_seq": 3,
+        "payload": {
+          "base64": "Y3Jvc3M=",
+          "encoding": "hex",
+          "hex": "63726f7373",
+          "length": 5,
+          "utf8": "cross"
+        },
+        "retain": false,
+        "right_observed_ns": 999999999999999999999999999997,
+        "right_root_position": 2,
+        "right_seq": 3,
+        "topic": "d/keys",
+        "transit_ns": 0
+      },
+      {
+        "left_observed_ns": 1000000000000000000000000000003,
+        "left_root_position": 3,
+        "left_seq": 4,
+        "payload": {
+          "base64": "",
+          "encoding": "hex",
+          "hex": "",
+          "length": 0,
+          "utf8": ""
+        },
+        "retain": true,
+        "right_observed_ns": 999999999999999999999999999998,
+        "right_root_position": 3,
+        "right_seq": 4,
+        "topic": "d/ret",
+        "transit_ns": 0
+      }
+    ],
+    "reaches_K": true
+  },
+  "retransmissions": {
+    "left": [],
+    "right": []
+  },
+  "roots": {
+    "left": [
+      {
+        "can_be_unmatched": false,
+        "can_be_unmatched_delta": null,
+        "candidate_count": 1,
+        "candidate_delta_by_position": {
+          "0": 5
+        },
+        "candidate_root_positions": [
+          0
+        ],
+        "candidate_root_seqs": [
+          1
+        ],
+        "capture_epoch": "cap-1",
+        "capture_id": "chain-left",
+        "counterpart_capture_id": "chain-right",
+        "counterpart_status": "forced_pair",
+        "forced_pair": true,
+        "message_id": 1,
+        "observed_ns": 1000000000000000000000000000000,
+        "payload": {
+          "base64": "AP+ACg0A",
+          "encoding": "hex",
+          "hex": "00ff800a0d00",
+          "length": 6,
+          "utf8": null
+        },
+        "qos": 1,
+        "raw_rows": [
+          {
+            "retry_of": null,
+            "role": "root",
+            "seq": 1
+          }
+        ],
+        "retain": false,
+        "root_index": 0,
+        "root_seq": 1,
+        "session_id": "s",
+        "side": "left",
+        "topic": "d/bin"
+      },
+      {
+        "can_be_unmatched": false,
+        "can_be_unmatched_delta": null,
+        "candidate_count": 1,
+        "candidate_delta_by_position": {
+          "1": 5
+        },
+        "candidate_root_positions": [
+          1
+        ],
+        "candidate_root_seqs": [
+          2
+        ],
+        "capture_epoch": "cap-2",
+        "capture_id": "chain-left",
+        "counterpart_capture_id": "chain-right",
+        "counterpart_status": "forced_pair",
+        "forced_pair": true,
+        "message_id": 3,
+        "observed_ns": 1000000000000000000000000000001,
+        "payload": {
+          "base64": "c2FtZQ==",
+          "encoding": "hex",
+          "hex": "73616d65",
+          "length": 4,
+          "utf8": "same"
+        },
+        "qos": 1,
+        "raw_rows": [
+          {
+            "retry_of": null,
+            "role": "root",
+            "seq": 2
+          }
+        ],
+        "retain": false,
+        "root_index": 1,
+        "root_seq": 2,
+        "session_id": "s",
+        "side": "left",
+        "topic": "d/epoch"
+      },
+      {
+        "can_be_unmatched": false,
+        "can_be_unmatched_delta": null,
+        "candidate_count": 1,
+        "candidate_delta_by_position": {
+          "2": 5
+        },
+        "candidate_root_positions": [
+          2
+        ],
+        "candidate_root_seqs": [
+          3
+        ],
+        "capture_epoch": "cap-3",
+        "capture_id": "chain-left",
+        "counterpart_capture_id": "chain-right",
+        "counterpart_status": "forced_pair",
+        "forced_pair": true,
+        "message_id": 9,
+        "observed_ns": 1000000000000000000000000000002,
+        "payload": {
+          "base64": "Y3Jvc3M=",
+          "encoding": "hex",
+          "hex": "63726f7373",
+          "length": 5,
+          "utf8": "cross"
+        },
+        "qos": 1,
+        "raw_rows": [
+          {
+            "retry_of": null,
+            "role": "root",
+            "seq": 3
+          }
+        ],
+        "retain": false,
+        "root_index": 2,
+        "root_seq": 3,
+        "session_id": "s",
+        "side": "left",
+        "topic": "d/keys"
+      },
+      {
+        "can_be_unmatched": false,
+        "can_be_unmatched_delta": null,
+        "candidate_count": 1,
+        "candidate_delta_by_position": {
+          "3": 5
+        },
+        "candidate_root_positions": [
+          3
+        ],
+        "candidate_root_seqs": [
+          4
+        ],
+        "capture_epoch": "cap-4",
+        "capture_id": "chain-left",
+        "counterpart_capture_id": "chain-right",
+        "counterpart_status": "forced_pair",
+        "forced_pair": true,
+        "message_id": 4,
+        "observed_ns": 1000000000000000000000000000003,
+        "payload": {
+          "base64": "",
+          "encoding": "hex",
+          "hex": "",
+          "length": 0,
+          "utf8": ""
+        },
+        "qos": 1,
+        "raw_rows": [
+          {
+            "retry_of": null,
+            "role": "root",
+            "seq": 4
+          }
+        ],
+        "retain": true,
+        "root_index": 3,
+        "root_seq": 4,
+        "session_id": "s",
+        "side": "left",
+        "topic": "d/ret"
+      }
+    ],
+    "right": [
+      {
+        "can_be_unmatched": false,
+        "can_be_unmatched_delta": null,
+        "candidate_count": 1,
+        "candidate_delta_by_position": {
+          "0": 5
+        },
+        "candidate_root_positions": [
+          0
+        ],
+        "candidate_root_seqs": [
+          1
+        ],
+        "capture_epoch": "peer-a",
+        "capture_id": "chain-right",
+        "counterpart_capture_id": "chain-left",
+        "counterpart_status": "forced_pair",
+        "forced_pair": true,
+        "message_id": 90,
+        "observed_ns": 999999999999999999999999999995,
+        "payload": {
+          "base64": "AP+ACg0A",
+          "encoding": "hex",
+          "hex": "00ff800a0d00",
+          "length": 6,
+          "utf8": null
+        },
+        "qos": 1,
+        "raw_rows": [
+          {
+            "retry_of": null,
+            "role": "root",
+            "seq": 1
+          }
+        ],
+        "retain": false,
+        "root_index": 0,
+        "root_seq": 1,
+        "session_id": "s",
+        "side": "right",
+        "topic": "d/bin"
+      },
+      {
+        "can_be_unmatched": false,
+        "can_be_unmatched_delta": null,
+        "candidate_count": 1,
+        "candidate_delta_by_position": {
+          "1": 5
+        },
+        "candidate_root_positions": [
+          1
+        ],
+        "candidate_root_seqs": [
+          2
+        ],
+        "capture_epoch": "peer-b",
+        "capture_id": "chain-right",
+        "counterpart_capture_id": "chain-left",
+        "counterpart_status": "forced_pair",
+        "forced_pair": true,
+        "message_id": 3,
+        "observed_ns": 999999999999999999999999999996,
+        "payload": {
+          "base64": "c2FtZQ==",
+          "encoding": "hex",
+          "hex": "73616d65",
+          "length": 4,
+          "utf8": "same"
+        },
+        "qos": 1,
+        "raw_rows": [
+          {
+            "retry_of": null,
+            "role": "root",
+            "seq": 2
+          }
+        ],
+        "retain": false,
+        "root_index": 1,
+        "root_seq": 2,
+        "session_id": "s",
+        "side": "right",
+        "topic": "d/epoch"
+      },
+      {
+        "can_be_unmatched": false,
+        "can_be_unmatched_delta": null,
+        "candidate_count": 1,
+        "candidate_delta_by_position": {
+          "2": 5
+        },
+        "candidate_root_positions": [
+          2
+        ],
+        "candidate_root_seqs": [
+          3
+        ],
+        "capture_epoch": "peer-c",
+        "capture_id": "chain-right",
+        "counterpart_capture_id": "chain-left",
+        "counterpart_status": "forced_pair",
+        "forced_pair": true,
+        "message_id": 12,
+        "observed_ns": 999999999999999999999999999997,
+        "payload": {
+          "base64": "Y3Jvc3M=",
+          "encoding": "hex",
+          "hex": "63726f7373",
+          "length": 5,
+          "utf8": "cross"
+        },
+        "qos": 1,
+        "raw_rows": [
+          {
+            "retry_of": null,
+            "role": "root",
+            "seq": 3
+          }
+        ],
+        "retain": false,
+        "root_index": 2,
+        "root_seq": 3,
+        "session_id": "s",
+        "side": "right",
+        "topic": "d/keys"
+      },
+      {
+        "can_be_unmatched": false,
+        "can_be_unmatched_delta": null,
+        "candidate_count": 1,
+        "candidate_delta_by_position": {
+          "3": 5
+        },
+        "candidate_root_positions": [
+          3
+        ],
+        "candidate_root_seqs": [
+          4
+        ],
+        "capture_epoch": "peer-d",
+        "capture_id": "chain-right",
+        "counterpart_capture_id": "chain-left",
+        "counterpart_status": "forced_pair",
+        "forced_pair": true,
+        "message_id": 91,
+        "observed_ns": 999999999999999999999999999998,
+        "payload": {
+          "base64": "",
+          "encoding": "hex",
+          "hex": "",
+          "length": 0,
+          "utf8": ""
+        },
+        "qos": 1,
+        "raw_rows": [
+          {
+            "retry_of": null,
+            "role": "root",
+            "seq": 4
+          }
+        ],
+        "retain": true,
+        "root_index": 3,
+        "root_seq": 4,
+        "session_id": "s",
+        "side": "right",
+        "topic": "d/ret"
+      }
+    ]
+  },
+  "summary": {
+    "K": 4,
+    "algorithm_stats": {
+      "algorithm": "delta-cutpoint-sweep + bit-parallel-LCS",
+      "content_equal_pairs": 4,
+      "delta_cells": 2,
+      "delta_values_represented": 2,
+      "limits": {
+        "max_delta_cells": 200000,
+        "max_optimal_cells": 2048
+      },
+      "optimal_delta_cells": 1,
+      "optimal_delta_values_represented": 1,
+      "roots_left": 4,
+      "roots_right": 4
+    },
+    "conditions": {
+      "offset_ns": [
+        -6,
+        6
+      ],
+      "transit_ns": [
+        0,
+        1
+      ]
+    },
+    "contract": {
+      "comparison_object": "一条有序转发链（每次独立发布至多在另一端对应一次，发布先后不颠倒；允许丢失与单侧多出）",
+      "content_equality": [
+        "topic:原字符串",
+        "payload:原字节",
+        "retain:相等"
+      ],
+      "independent_duplicates": "retry_of=null 的每一行都是独立发布，即使 dup=true 或包号/主题/正文相同也不合并",
+      "not_used_for_matching": [
+        "qos",
+        "message_id",
+        "session_id"
+      ],
+      "pairing": "根发布之间、非交叉的一对一关系（左端次序递增 ⇒ 右端次序严格递增）",
+      "retransmission_rule": "retry_of 必须指向本端更早、retry_of=null 的根，capture_epoch/session_id/qos/message_id/topic/payload字节/retain 全同，qos∈{1,2}，重传行 dup=true；根与重传折叠为一次发布；拒绝链式 retry_of",
+      "scope_note": "仅适用于具有该顺序保证的捕获；不宣称任意 MQTT 部署都有此性质",
+      "time_model": "同一次比较只有一个共同整数 delta∈offset_ns 加在右端时钟上；每对满足 transit_ns[0] ≤ R+delta−L ≤ transit_ns[1]",
+      "unmatched_meaning": "no_counterpart_in_capture 仅说明指定捕获与合同内没有对应证据，不等于证明网络真实丢包"
+    },
+    "counts": {
+      "forced_pairs": 4,
+      "left": {
+        "capture_id": "chain-left",
+        "folded_rows_checked": 4,
+        "independent_publications": 4,
+        "raw_rows": 4,
+        "retransmission_rows": 0
+      },
+      "matched_pairs": 4,
+      "paired_roots_left": 4,
+      "paired_roots_right": 4,
+      "right": {
+        "capture_id": "chain-right",
+        "folded_rows_checked": 4,
+        "independent_publications": 4,
+        "raw_rows": 4,
+        "retransmission_rows": 0
+      },
+      "uncertain_roots_left": 0,
+      "uncertain_roots_right": 0
+    },
+    "optimal_delta_intervals": [
+      [
+        5,
+        6
+      ]
+    ]
+  }
+}

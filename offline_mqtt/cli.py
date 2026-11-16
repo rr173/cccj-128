@@ -13,8 +13,14 @@
     python -m offline_mqtt.cli csubscribe   DB_PATH POLICY PRINCIPAL -- FILTER ...
     python -m offline_mqtt.cli cpoll        DB_PATH SUB_ID
 
+捕获链对账（只读来源，写出新报告）::
+
+    python -m offline_mqtt.cli reconcile MANIFEST [--out REPORT] [--dry-run]
+    python -m offline_mqtt.cli summary   REPORT
+    python -m offline_mqtt.cli explain   REPORT --side left|right (--seq N | --position N)
+
 退出码约定：0=命令成功（check-* 中 safe=false / allowed=false 也是成功，结论在
-JSON 里）；2=输入/策略错误；3=资源不足无法裁定。
+JSON 里）；2=输入/策略错误；3=资源不足无法裁定；4=对账报告目标已存在（拒绝覆盖）。
 """
 
 from __future__ import annotations
@@ -35,6 +41,7 @@ from .generator import (
 )
 from .ingress import MqttIngress
 from .policy import PolicyError, load_policy_file
+from . import capture_cli
 
 # 退出码：输入/策略错误=2，资源不足=3。
 EXIT_INPUT_ERROR = 2
@@ -264,7 +271,29 @@ def main(argv: list[str] | None = None) -> int:
     p_cpoll.add_argument("db_path")
     p_cpoll.add_argument("sub_id", type=int)
 
+    p_rec = sub.add_parser("reconcile", help="捕获链对账：生成新报告（只读来源）")
+    p_rec.add_argument("manifest")
+    p_rec.add_argument("--out", default=None)
+    p_rec.add_argument("--dry-run", action="store_true")
+
+    p_sum = sub.add_parser("summary", help="打印捕获链对账报告摘要")
+    p_sum.add_argument("report")
+
+    p_exp = sub.add_parser("explain", help="解释报告中的一个根")
+    p_exp.add_argument("report")
+    p_exp.add_argument("--side", choices=("left", "right"), required=True)
+    p_exp.add_argument("--seq", type=int, default=None)
+    p_exp.add_argument("--position", type=int, default=None)
+
     args = parser.parse_args(argv)
+    if args.cmd == "reconcile":
+        if not args.dry_run and not args.out:
+            parser.error("reconcile 需要 --out（或用 --dry-run）")
+        return capture_cli.cmd_reconcile(args.manifest, args.out, args.dry_run)
+    if args.cmd == "summary":
+        return capture_cli.cmd_summary(args.report)
+    if args.cmd == "explain":
+        return capture_cli.cmd_explain(args.report, args.side, args.seq, args.position)
     if args.cmd == "seed":
         return _seed(args.db_path, args.sub)
     if args.cmd == "dump":

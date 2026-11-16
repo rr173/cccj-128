@@ -55,7 +55,9 @@ offline_mqtt/
   ingress.py     接入器外观：ingest / poll / drain / 检查接口
   generator.py   本地帧生成器（脚本式 + 可控随机，离线）
   cli.py         跨进程 seed/dump/poll 命令
-tests/           6 个 unittest 模块，43 个用例
+  capture_reconcile.py  捕获链对账：清单/观测校验、重传折叠、报告与 explain
+  capture_match.py      对账的纯计算核心（delta 切点扫描 + 位并行 LCS）
+tests/           unittest 模块（含对账与独立参考器）
 run_tests.py     隔离模式（python -I）测试运行器
 ```
 
@@ -280,3 +282,200 @@ tests/
 demo/            策略样例、可复核演练与跨进程复核脚本
 ```
 
+
+---
+
+# 捕获链对账（离线数据质量入口，本次新增能力）
+
+> **权限与副作用边界：本能力只读两份已封存的来源账本与两份观测 JSONL，
+> 将结果写成一份**新**报告文件。不新建订阅、不改授权、不改现有接收结果、
+> 不连接任何消息代理。来源库以 `file:...?mode=ro` 只读 URI 打开，只执行
+> `PRAGMA table_info` 与 `SELECT`，不调用会建表/改日志模式的 `MqttStore`。**
+
+## 它回答什么问题
+
+运维给出同一条采集转发链两端的捕获，需要核实“上游这条消息在下游有没有对应
+记录”。两端的包号（`message_id`）、会话名（`session_id`）各自编号，时钟也有
+偏差；同一正文可能只是正常的重复发布。因此：
+
+- **不按摘要去重后相减**：`retry_of=null` 的每一行都是独立发布，即使 `dup=true`
+  或包号/主题/正文完全相同，也不合并；跨 epoch 包号复用同样不合并。
+- **不替每对消息各挑一个校时值**：同一次比较只有一个共同整数偏差
+  `delta ∈ offset_ns` 加在右端时钟上，每一对都必须满足
+  `transit_ns[0] ≤ R + delta − L ≤ transit_ns[1]`。
+
+## 捕获顺序假设（合同适用边界）
+
+本模块**只**适用于调用方明确指定的、具有下列顺序保证的一条有序转发链：
+
+- 每次独立发布至多在另一端对应一次；
+- 发布先后不颠倒；
+- 允许丢失和单侧多出。
+
+**不宣称任意 MQTT 部署都有这项性质。** 不满足该保证的捕获不能使用本模块的
+结论去推断网络行为。
+
+## 输入清单
+
+```json
+{
+  "version": 1,
+  "left":  {"capture_id": "cap-left",  "ledger": "left/ledger.db",
+            "observations": "left/observations.jsonl"},
+  "right": {"capture_id": "cap-right", "ledger": "right/ledger.db",
+            "observations": "right/observations.jsonl"},
+  "offset_ns": [-10, 0],
+  "transit_ns": [0, 0]
+}
+```
+
+- 相对路径按**清单所在目录**解析；两端 `capture_id` 必须不同。
+- `offset_ns=[a,b]`、`transit_ns=[u,v]` 必须是整数闭区间，`a<=b`、`0<=u<=v`。
+- 清单与观测都拒绝重复 JSON 键、额外字段、缺字段、坏引用；错误带
+  `location`（文件 + 行号或 JSON 路径）。
+
+观测 JSONL 每行**恰含**四个字段：
+
+```json
+{"event_seq": 1, "capture_epoch": "L1", "observed_ns": 0, "retry_of": null}
+```
+
+- `event_seq` 必须唯一对应本端 `ledger` 的一条记录；**每端 ledger 全部行都要有
+  且只有一份观测**，遗漏后不会悄悄当作完整。
+- `capture_epoch` 非空字符串；`observed_ns` 是有符号整数纳秒；`retry_of` 为
+  `null` 或本端另一 `event_seq`。
+- **以 `ledger.seq` 为本端顺序**（不是观测文件的行顺序、也不用浮点
+  `ingested_at`）：按 seq 升序看，`observed_ns` 不得下降。
+- 所有整数拒绝布尔值。来源库 `ledger` 表缺列/缺表也按输入失败处理。
+
+## 重传折叠规则（只用采集方给出的确切证据）
+
+`retry_of` 是采集方给出的**确切**重传证据，只有全部满足才折叠：
+
+1. 指向本端**更早**的 `event_seq`，且该目标本身 `retry_of=null`（根）；
+2. 两行 `capture_epoch`、`session_id`、`qos`、`message_id`、`topic`、
+   `payload` 原字节、`retain` 全同；
+3. `qos ∈ {1,2}`；重传行 `dup=true`；
+4. 不接受链式 `retry_of`。
+
+根与它的全部重传行构成**一次**发布，使用**根**的时间与次序，并保留全部原始
+行定位。没有明确引用的单侧重复只能作为独立业务出现参与对账；本模块不声称
+已证明它是网络重传。
+
+## 配对与“最多可解释发布数”
+
+- 内容条件**只有**：`topic` 原字符串、`payload` 原字节、`retain` 相等。
+  不做 JSON 解析、Unicode 规范化或文本转码。`qos`/`message_id`/`session_id`
+  是端内证据，不要求跨端一致。
+- 配对方案 = 根之间**不交叉**的一对一关系：左端位置递增时右端位置严格递增。
+- 在所有合法 `delta` 与配对方案中求最大配对数 **K**。
+
+### 为什么完整且不拼凑局部方案
+
+固定一对内容相等的根，使它成为合法边的 delta 集合是整数闭区间
+`[L−R+u, L−R+v] ∩ [a,b]`。所有这样的区间端点把 delta 轴切成有限段；**同一段内
+每个整数 delta 的边集完全相同**，因此该段的最大不交叉配对数恒定。于是：
+
+1. 枚举切点段（数量 ≤ 2·内容相等对数 + 2），**不逐纳秒扫描、不抽样**；
+2. 每段用位并行 LCS（Hyyrö 半字节位向量）精确求出配对数；
+3. `K` = 所有段的最大值；最优 delta = 所有 K 段在整数轴上的并集，按相邻整数
+   合并成有序闭区间，不做最小/最大包络填充；
+4. 每个根的“候选对端 / 可不配 / forced”都**逐段**计算后再合并：
+   - 候选 = 某个最优段中存在达到 K 的方案使用该边；
+   - `can_be_unmatched` = 某个最优段中存在达到 K 的方案不使用该根；
+   - `forced_pair` = 在所有最优段中，该对端都是该根唯一可能对端。
+5. 每个局部结论都来自**单个 delta 下的一个完整方案**；合并时只做并/交，从未
+   把两个不同 delta 的边拼进同一个方案。证据里的任一实例也只有一个 delta。
+
+### 结论的边界
+
+- `forced_pair`：同一对出现在**每一个**最优方案中。
+- 只有一个候选、但该根也可能不配（`single_candidate_but_unmatchable`）：
+  **不能**称确定对应。
+- `no_counterpart_in_capture`：任何最优方案都不配该根。这只说明**指定捕获与
+  合同内**没有对应证据，**不等于**证明网络真实丢包。
+- `constrained_out`：受时间/顺序限制，该根无法被解释为任何对端。
+
+## 规模与资源上限（写在代码里，超限明确失败）
+
+| 上限 | 默认值 | 位置 |
+|---|---|---|
+| 单端独立发布（根） | 5000 | `capture_reconcile.MAX_ROOTS_PER_SIDE` |
+| 单端原始行 | 200000 | `capture_reconcile.MAX_RAW_ROWS_PER_SIDE` |
+| delta 切点段数 | 200000 | `capture_match.MAX_DELTA_CELLS` |
+| 参与细算的最优段数 | 2048 | `capture_match.MAX_OPTIMAL_CELLS` |
+| explain 单根重建方案数 | 8 | `capture_reconcile.MAX_EXPLAIN_SCENARIOS` |
+
+任一上限触发都抛 `ReconcileResourceLimit`（CLI 退出码 3），只报“未能完成”，
+**绝不**输出貌似完整的 K 或确定缺口。整份已封存捕获允许装入内存。
+
+## 可导入接口
+
+```python
+from offline_mqtt import (
+    reconcile, write_report, load_report, summarize_report,
+    explain_report, verify_report, ReconcileInputError,
+)
+
+report = reconcile("manifest.json")              # 纯计算，不写文件
+path = write_report(report, "report.json")       # 目标已存在则 ReportExistsError
+summary = summarize_report(load_report(path))    # K / 区间 / 计数 / 结论
+explanation = explain_report(load_report(path), "left", seq=1)
+assert verify_report(load_report(path))["ok"]    # 不读来源的离线自检
+```
+
+`reconcile` 只读来源；`write_report` 用同目录临时文件 + 原子硬链接（或排他
+创建），失败不会留下可正常打开、声称完整的半份报告。
+
+## CLI
+
+```bash
+python -m offline_mqtt.cli reconcile MANIFEST --out REPORT      # 新报告，已存在则退出码 4
+python -m offline_mqtt.cli reconcile MANIFEST --dry-run         # 只打印摘要
+python -m offline_mqtt.cli summary REPORT
+python -m offline_mqtt.cli explain REPORT --side left --seq 1
+python -m offline_mqtt.cli explain REPORT --side right --position 0
+```
+
+| 情形 | 退出码 |
+|---|---|
+| 成功（含 K=0 这类正常结论） | 0 |
+| 输入/来源/清单/观测错误 | 2 |
+| 资源不足，未能完成 | 3 |
+| 目标报告已存在（拒绝覆盖） | 4 |
+
+## 报告内容与离线复核
+
+`report.json` 先给两端原始条数、重传折叠数、独立发布数、`K`，再给：
+
+- `optimal_delta_intervals`：达到 K 的全部 delta，有序闭区间；
+- `optimal_witness`：一份可复核的最优配对实例（实际 delta + 逐对时延），
+  同一输入重复执行稳定；
+- `roots.left` / `roots.right`：每个根的全部候选、每对候选成立的一个 delta、
+  `can_be_unmatched`、`forced_pair`、`counterpart_status`，以及根 + 重传行的
+  原始 `seq` 回指（每根只消耗一次）；
+- `retransmissions`：每一组根/重传关系的完整证据；
+- 主题、`payload` 原字节表达（hex + base64 + 长度，可解码时附 UTF-8）、
+  `observed_ns`、输入摘要（清单 sha256、来源库/观测 sha256）与所用条件；
+- **不含可写来源连接**：来源只以 sha256 记录，关掉并移走两端后仍可复核。
+
+`explain` 针对一个根展示不同候选或“可不配”结论：若能形成两种以上结论，给出
+至少两个确实达到 K、各自内部共用同一 delta 的完整方案（不同方案可用不同
+delta），并对每个方案做独立复核。
+
+## 演练与测试
+
+- `demo/run_reconcile_demo.py`（`python3 -I demo/run_reconcile_demo.py`）：
+  先用现有接入器生成两份真实 ledger，再写独立观测材料运行新入口。覆盖用户
+  指定的关键例子（K=1、两个单点 delta）、同刻 A,B,C 对 B,C,A（K=2 保留
+  B/C）、双同正文根 + 明确重传、跨 epoch 包号复用、无引用 dup、跨端不同包号、
+  任意二进制正文、空载荷 retain 删除、闭区间端点、10^30 量级时间基数、
+  完全不相容、一端为空、五类真实失败（并核对来源与旧报告逐字节不变）、
+  独立参考器核对与 200 根 + 巨大 delta 范围。证据写入
+  `demo/reconcile_evidence/`。
+- `tests/reference_reconciler.py`：另写的很小参考器，**全枚举**所有顺序配对与
+  小范围 delta，不调用正式求解函数；`tests/test_capture_reconcile.py` 用它核对
+  K、最优 delta 集合、每根候选与可不配标志，并验证 200 根生产路径没有枚举
+  时间值。
+- `tests/test_capture_reconcile.py`：25 个用例，含来源只读、目标拒绝覆盖、
+  资源上限、报告在来源移除后的离线复核。

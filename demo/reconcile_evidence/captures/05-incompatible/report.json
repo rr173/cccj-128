@@ -1,0 +1,226 @@
+{
+  "captures": {
+    "left": {
+      "capture_id": "chain-left",
+      "ledger_path": "left/ledger.db",
+      "ledger_sha256": "65925e624da3d7ed10349cadcf153edc40644f79a155885214c415d91ce4de11",
+      "observations_path": "left/observations.jsonl",
+      "observations_sha256": "0a6154577e8f391e95188c68b1e1d97126aee633e59ab03038330496994b7829",
+      "raw_rows": 1,
+      "retransmission_rows": 0,
+      "roots": 1
+    },
+    "right": {
+      "capture_id": "chain-right",
+      "ledger_path": "right/ledger.db",
+      "ledger_sha256": "4135dbade56c1c1a634ad41025b1a4ce62b7c58950c6a7ebc367cd3dd5962191",
+      "observations_path": "right/observations.jsonl",
+      "observations_sha256": "0a6154577e8f391e95188c68b1e1d97126aee633e59ab03038330496994b7829",
+      "raw_rows": 1,
+      "retransmission_rows": 0,
+      "roots": 1
+    }
+  },
+  "contract": {
+    "comparison_object": "一条有序转发链（每次独立发布至多在另一端对应一次，发布先后不颠倒；允许丢失与单侧多出）",
+    "content_equality": [
+      "topic:原字符串",
+      "payload:原字节",
+      "retain:相等"
+    ],
+    "independent_duplicates": "retry_of=null 的每一行都是独立发布，即使 dup=true 或包号/主题/正文相同也不合并",
+    "not_used_for_matching": [
+      "qos",
+      "message_id",
+      "session_id"
+    ],
+    "pairing": "根发布之间、非交叉的一对一关系（左端次序递增 ⇒ 右端次序严格递增）",
+    "retransmission_rule": "retry_of 必须指向本端更早、retry_of=null 的根，capture_epoch/session_id/qos/message_id/topic/payload字节/retain 全同，qos∈{1,2}，重传行 dup=true；根与重传折叠为一次发布；拒绝链式 retry_of",
+    "scope_note": "仅适用于具有该顺序保证的捕获；不宣称任意 MQTT 部署都有此性质",
+    "time_model": "同一次比较只有一个共同整数 delta∈offset_ns 加在右端时钟上；每对满足 transit_ns[0] ≤ R+delta−L ≤ transit_ns[1]",
+    "unmatched_meaning": "no_counterpart_in_capture 仅说明指定捕获与合同内没有对应证据，不等于证明网络真实丢包"
+  },
+  "forced_pairs": [],
+  "format": "offline_mqtt.capture_chain_reconciliation/v1",
+  "format_version": 1,
+  "generated_by": "offline_mqtt.capture_reconcile.reconcile",
+  "input": {
+    "manifest_path": "/workspace/demo/reconcile_evidence/captures/05-incompatible/manifest.json",
+    "manifest_sha256": "706c158c4f62303d4e273f554b1fa8800457464cf3db67f08091bb9d3aff9466",
+    "offset_ns": [
+      0,
+      0
+    ],
+    "transit_ns": [
+      0,
+      0
+    ]
+  },
+  "notes": [
+    "本报告只是指定捕获与合同内的对应证据；no_counterpart_in_capture 不等于证明网络真实丢包。",
+    "同一正文的独立重复发布不按摘要去重；重传只由 retry_of 引用折叠。",
+    "报告不含可写来源连接；来源库与观测仅以 sha256 记录。"
+  ],
+  "optimal_witness": {
+    "delta": 0,
+    "pair_count": 0,
+    "pairs": [],
+    "reaches_K": true
+  },
+  "retransmissions": {
+    "left": [],
+    "right": []
+  },
+  "roots": {
+    "left": [
+      {
+        "can_be_unmatched": true,
+        "can_be_unmatched_delta": 0,
+        "candidate_count": 0,
+        "candidate_delta_by_position": {},
+        "candidate_root_positions": [],
+        "candidate_root_seqs": [],
+        "capture_epoch": "epoch-1",
+        "capture_id": "chain-left",
+        "counterpart_capture_id": "chain-right",
+        "counterpart_status": "no_counterpart_in_capture",
+        "forced_pair": false,
+        "message_id": 1,
+        "observed_ns": 0,
+        "payload": {
+          "base64": "QQ==",
+          "encoding": "hex",
+          "hex": "41",
+          "length": 1,
+          "utf8": "A"
+        },
+        "qos": 1,
+        "raw_rows": [
+          {
+            "retry_of": null,
+            "role": "root",
+            "seq": 1
+          }
+        ],
+        "retain": false,
+        "root_index": 0,
+        "root_seq": 1,
+        "session_id": "s",
+        "side": "left",
+        "topic": "d/a"
+      }
+    ],
+    "right": [
+      {
+        "can_be_unmatched": true,
+        "can_be_unmatched_delta": 0,
+        "candidate_count": 0,
+        "candidate_delta_by_position": {},
+        "candidate_root_positions": [],
+        "candidate_root_seqs": [],
+        "capture_epoch": "epoch-1",
+        "capture_id": "chain-right",
+        "counterpart_capture_id": "chain-left",
+        "counterpart_status": "no_counterpart_in_capture",
+        "forced_pair": false,
+        "message_id": 2,
+        "observed_ns": 0,
+        "payload": {
+          "base64": "Qg==",
+          "encoding": "hex",
+          "hex": "42",
+          "length": 1,
+          "utf8": "B"
+        },
+        "qos": 1,
+        "raw_rows": [
+          {
+            "retry_of": null,
+            "role": "root",
+            "seq": 1
+          }
+        ],
+        "retain": false,
+        "root_index": 0,
+        "root_seq": 1,
+        "session_id": "s",
+        "side": "right",
+        "topic": "d/a"
+      }
+    ]
+  },
+  "summary": {
+    "K": 0,
+    "algorithm_stats": {
+      "algorithm": "delta-cutpoint-sweep + bit-parallel-LCS",
+      "content_equal_pairs": 0,
+      "delta_cells": 1,
+      "delta_values_represented": 1,
+      "limits": {
+        "max_delta_cells": 200000,
+        "max_optimal_cells": 2048
+      },
+      "optimal_delta_cells": 1,
+      "optimal_delta_values_represented": 1,
+      "roots_left": 1,
+      "roots_right": 1
+    },
+    "conditions": {
+      "offset_ns": [
+        0,
+        0
+      ],
+      "transit_ns": [
+        0,
+        0
+      ]
+    },
+    "contract": {
+      "comparison_object": "一条有序转发链（每次独立发布至多在另一端对应一次，发布先后不颠倒；允许丢失与单侧多出）",
+      "content_equality": [
+        "topic:原字符串",
+        "payload:原字节",
+        "retain:相等"
+      ],
+      "independent_duplicates": "retry_of=null 的每一行都是独立发布，即使 dup=true 或包号/主题/正文相同也不合并",
+      "not_used_for_matching": [
+        "qos",
+        "message_id",
+        "session_id"
+      ],
+      "pairing": "根发布之间、非交叉的一对一关系（左端次序递增 ⇒ 右端次序严格递增）",
+      "retransmission_rule": "retry_of 必须指向本端更早、retry_of=null 的根，capture_epoch/session_id/qos/message_id/topic/payload字节/retain 全同，qos∈{1,2}，重传行 dup=true；根与重传折叠为一次发布；拒绝链式 retry_of",
+      "scope_note": "仅适用于具有该顺序保证的捕获；不宣称任意 MQTT 部署都有此性质",
+      "time_model": "同一次比较只有一个共同整数 delta∈offset_ns 加在右端时钟上；每对满足 transit_ns[0] ≤ R+delta−L ≤ transit_ns[1]",
+      "unmatched_meaning": "no_counterpart_in_capture 仅说明指定捕获与合同内没有对应证据，不等于证明网络真实丢包"
+    },
+    "counts": {
+      "forced_pairs": 0,
+      "left": {
+        "capture_id": "chain-left",
+        "folded_rows_checked": 1,
+        "independent_publications": 1,
+        "raw_rows": 1,
+        "retransmission_rows": 0
+      },
+      "matched_pairs": 0,
+      "paired_roots_left": 0,
+      "paired_roots_right": 0,
+      "right": {
+        "capture_id": "chain-right",
+        "folded_rows_checked": 1,
+        "independent_publications": 1,
+        "raw_rows": 1,
+        "retransmission_rows": 0
+      },
+      "uncertain_roots_left": 1,
+      "uncertain_roots_right": 1
+    },
+    "optimal_delta_intervals": [
+      [
+        0,
+        0
+      ]
+    ]
+  }
+}

@@ -1,0 +1,4 @@
+{"event_seq": 1, "capture_epoch": "cap-1", "observed_ns": 1000000000000000000000000000000, "retry_of": null}
+{"event_seq": 2, "capture_epoch": "cap-2", "observed_ns": 1000000000000000000000000000001, "retry_of": null}
+{"event_seq": 3, "capture_epoch": "cap-3", "observed_ns": 1000000000000000000000000000002, "retry_of": null}
+{"event_seq": 4, "capture_epoch": "cap-4", "observed_ns": 1000000000000000000000000000003, "retry_of": null}

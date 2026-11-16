@@ -1,0 +1,4 @@
+{"event_seq": 1, "capture_epoch": "epoch-1", "observed_ns": 0, "retry_of": null}
+{"event_seq": 2, "capture_epoch": "epoch-1", "observed_ns": 0, "retry_of": 1}
+{"event_seq": 3, "capture_epoch": "epoch-1", "observed_ns": 5, "retry_of": null}
+{"event_seq": 4, "capture_epoch": "epoch-1", "observed_ns": 10, "retry_of": null}

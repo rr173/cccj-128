@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "left": {
+    "capture_id": "chain-left",
+    "ledger": "left/ledger.db",
+    "observations": "left/observations.jsonl"
+  },
+  "right": {
+    "capture_id": "chain-right",
+    "ledger": "right/ledger.db",
+    "observations": "right/observations.jsonl"
+  },
+  "offset_ns": [
+    0,
+    5
+  ],
+  "transit_ns": [
+    0,
+    0
+  ]
+}
